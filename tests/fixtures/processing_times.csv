@@ -1,0 +1,9 @@
+snapshot_date,form,form_category,office,range_low_months,range_high_months,unit
+2026-09-01,I-765,(c)(9) Pending I-485,National,2,5,months
+2026-09-01,I-765,(c)(9) Pending I-485,Texas Service Center,3,7,months
+2026-09-01,I-131,Advance parole,National,4,9,months
+2026-09-01,I-140,Employment - Other,National,6,10,months
+2026-09-01,I-485,Employment-based,National,8,14,months
+2026-09-01,I-485,Family-based,National,10,18,months
+2026-09-01,I-485,Employment-based,Nebraska Service Center,9,15,months
+2026-08-01,I-765,(c)(9) Pending I-485,National,3,6,months

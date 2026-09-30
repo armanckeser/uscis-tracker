@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: uscis-tracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - uscis-tracker-pgdata:/var/lib/postgresql/data
+    labels:
+      - "cosmos-stack=uscis-tracker"
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: uscis-tracker-api
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/app
+      PORT: "4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    labels:
+      - "cosmos-stack=uscis-tracker"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uscis-tracker-frontend
+    restart: unless-stopped
+    ports:
+      - "5181:80"
+    depends_on:
+      - api
+    labels:
+      - "cosmos-stack=uscis-tracker"
+      - "cosmos-stack-main=uscis-tracker-frontend"
+      - "cosmos-icon=https://api.iconify.design/lucide:shield-check.svg?color=%23bef264"
+
+volumes:
+  uscis-tracker-pgdata:

@@ -1,0 +1,41 @@
+{
+  "name": "uscis-tracker",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:frontend\"",
+    "dev:frontend": "vite --host 0.0.0.0",
+    "dev:server": "tsx watch server/index.ts",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "db:schema": "psql \"$DATABASE_URL\" -f schema.sql"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.5.0",
+    "@hono/node-server": "^1.19.7",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
+    "hono": "^4.10.7",
+    "lucide-react": "^0.556.0",
+    "pg": "^8.16.3",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "vite": "^8.0.10",
+    "web-push": "^3.6.7",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/web-push": "^3.6.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
+  }
+}

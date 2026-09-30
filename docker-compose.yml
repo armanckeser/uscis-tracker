@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: uscis-tracker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - uscis-tracker-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: uscis-tracker-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/app
+      PORT: 4000
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:5181}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:uscis-tracker@localhost}
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: uscis-tracker-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "5181:80"
+
+volumes:
+  uscis-tracker-postgres:

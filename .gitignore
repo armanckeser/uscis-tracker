@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Secrets (VAPID keys, DATABASE_URL) — never commit
+server/.env
+.env
+
+# Machine-local agent/editor state
+.claude/settings.local.json
+
+# Vendored agent skills / tooling state (not part of the app)
+.agents/
+.impeccable/
+
+# OS cruft
+.DS_Store

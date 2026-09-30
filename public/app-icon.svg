@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="USCIS Tracker">
+  <rect width="128" height="128" rx="24" fill="#060709"/>
+  <rect x="30" y="22" width="68" height="84" rx="10" fill="#16191b"/>
+  <path d="M44 48h40M44 64h32M44 80h26" stroke="#e9ecee" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="86" cy="84" r="14" fill="#bdcf72"/>
+</svg>
