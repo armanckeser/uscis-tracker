@@ -119,13 +119,20 @@ function PlaceCard({ person, principalName, onEditProfile }: { person: PersonRec
       )}
 
       {delta && (
-        <div className="since-row">
-          <span className="label">Since last bulletin</span>
-          <span className={`since-value tone-${delta.tone}`}>
-            <DeltaIcon size={16} aria-hidden="true" />
-            {delta.text}
-            {prediction.latestBulletin && <span className="muted"> · {formatMonth(prediction.latestBulletin)}</span>}
+        <div className={`since-row tone-${delta.tone}`}>
+          <span className="since-icon" aria-hidden="true">
+            <DeltaIcon size={18} />
           </span>
+          <span className="since-main">
+            <span className="since-label">Since last bulletin</span>
+            <span className="since-value">{delta.text}</span>
+          </span>
+          {prediction.latestBulletin && (
+            <span className="since-date">
+              <span className="since-label">Bulletin</span>
+              <span className="since-when">{formatMonth(prediction.latestBulletin)}</span>
+            </span>
+          )}
         </div>
       )}
 
