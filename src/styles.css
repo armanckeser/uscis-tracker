@@ -1111,22 +1111,54 @@ details[open] > :not(summary) {
 .since-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--color-raised);
 }
 
-.since-value {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  font-weight: 600;
+.since-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, currentColor 16%, transparent);
 }
 
-.since-value .muted {
-  font-weight: 400;
+.since-main,
+.since-date {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.since-main {
+  flex: 1;
+}
+
+.since-date {
+  text-align: end;
+}
+
+.since-label {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+
+.since-value {
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.since-when {
+  color: var(--color-ink);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .place-foot {
