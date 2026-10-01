@@ -6,7 +6,7 @@ history, tells you what changed since you last looked (including the silent upda
 USCIS never announces), and estimates when the visa bulletin will reach your priority date.
 
 <p align="center">
-  <img src="img/hero.gif" alt="Four changes since you last looked: Alex's work permit card was mailed and picked up by USPS, and the I-485 got a silent update. Below, Alex's place in line: about 5–7 months to go, most likely April 2027." width="360" />
+  <img src="img/hero.gif" alt="Four changes since you last looked: Alex's work permit card was mailed and picked up by USPS, and the I-485 got a silent update. Below, Alex's place in line: about 4–6 months to go, most likely April 2027." width="360" />
 </p>
 
 - **One tap refreshes everything.** A saved bookmark reads every case from a signed-in
