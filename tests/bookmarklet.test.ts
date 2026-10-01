@@ -56,7 +56,7 @@ describe("refresh bookmarklet builder", () => {
 
     expect(result).not.toContain("break;");
     // Only a run that read nothing at all falls back to the raw-page route.
-    expect(result).toContain("if(sent===0&&denied>0)");
+    expect(result).toContain("if(G.length===0&&denied>0)");
   });
 
   it("counts_404_as_the_other_account_not_as_a_failure", () => {
@@ -89,15 +89,25 @@ describe("refresh bookmarklet builder", () => {
     expect(result).toContain(`mode:"no-cors"`);
   });
 
-  it("returns_a_no_cases_alert_bookmarklet_when_receipts_is_empty", () => {
-    // Regression guarded: with nothing tracked the bookmarklet must be a
-    // harmless message, not a loop over an empty list that reports "0 sent".
+  it("is_a_working_bookmark_before_any_case_is_tracked", () => {
+    // Regression guarded: with nothing tracked this used to be an alert saying
+    // so, which made typing a receipt number the only way to start. The bookmark
+    // a new user saves has to be the one that finds their cases.
     const result = buildRefreshBookmarklet({ trackerOrigin: TRACKER, receipts: [] });
 
-    expect(result).toBe(
-      `javascript:(function(){alert("USCIS Tracker: no cases are being tracked yet.");})();`,
-    );
-    expect(result).not.toContain("fetch");
+    expect(result).toContain("R=[]");
+    expect(result).not.toContain("no cases are being tracked");
+    expect(result).toContain("document.documentElement.innerHTML");
+    expect(result).toContain(`fetch("/account/case-service/api/cases",`);
+  });
+
+  it("only_counts_a_refusal_for_a_receipt_it_already_knew", () => {
+    // Regression guarded: receipt-shaped text on a page is not always a case.
+    // Counting such a candidate's 404 would report "1 belongs to the other USCIS
+    // account" about something that was never a case at all.
+    const result = buildRefreshBookmarklet({ trackerOrigin: TRACKER, receipts: ["IOE1234567801"] });
+
+    expect(result).toContain("if(!res.ok){if(!k)continue;");
   });
 
   it("escapes_interpolated_values_so_a_hostile_receipt_cannot_break_the_string", () => {
@@ -172,9 +182,18 @@ describe("iOS Shortcut script builder", () => {
     const shortcut = buildShortcutScript({ trackerOrigin: TRACKER, receipts: ["IOE1234567801"] });
     const bookmarklet = buildRefreshBookmarklet({ trackerOrigin: TRACKER, receipts: ["IOE1234567801"] });
 
-    const loop = "let sent=0,denied=0,failed=0;const C=[];";
+    const loop = "let sent=0,denied=0,failed=0;const C=[],D=[],G=[];";
     expect(shortcut).toContain(loop);
     expect(bookmarklet).toContain(loop);
     expect(shortcut).toContain("res.status===404){denied++;}else{failed++;}");
+  });
+
+  it("does_not_go_looking_for_cases_it_would_have_nowhere_to_put", () => {
+    // The self-hosted Shortcut ends in a sentence, not a trip to the tracker, so
+    // a case it found could not be handed over. It must not read one and drop it.
+    const shortcut = buildShortcutScript({ trackerOrigin: TRACKER, receipts: ["IOE1234567801"] });
+
+    expect(shortcut).not.toContain("innerHTML");
+    expect(shortcut).not.toContain("localStorage");
   });
 });

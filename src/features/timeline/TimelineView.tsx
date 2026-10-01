@@ -2,11 +2,13 @@ import { useMemo } from "react";
 import type { RefreshSummary, Summary } from "../../lib/types";
 import type { ShowToast } from "../../hooks/useToast";
 import { EmptyState } from "../../components/EmptyState";
+import { FoundCasesPanel } from "./FoundCasesPanel";
 import { NewSincePanel } from "./NewSincePanel";
 import { PersonSection } from "./PersonSection";
 import { AddPersonInline } from "./AddPersonInline";
 import { useCaseActions } from "./useCaseActions";
 import { LOCAL_MODE } from "../../lib/mode";
+import type { FoundCase } from "../../lib/refreshHandoff";
 
 // The home page: what changed, then per person their place in line, a status
 // card per case, and one combined history.
@@ -16,12 +18,18 @@ export function TimelineView({
   refresh,
   onOpenSnapshot,
   onOpenConnection,
+  found,
+  onAssignFound,
+  onDismissFound,
 }: {
   summary: Summary;
   showToast: ShowToast;
   refresh: RefreshSummary;
   onOpenSnapshot: (snapshotId: string) => Promise<void>;
   onOpenConnection: () => void;
+  found: FoundCase[];
+  onAssignFound: (person: { id: string; name: string }) => Promise<void>;
+  onDismissFound: () => void;
 }) {
   const { busy, setBusy, addCaseForPerson, addNewPerson, removeCase } = useCaseActions({
     people: summary.people,
@@ -41,6 +49,8 @@ export function TimelineView({
     return map;
   }, [summary.noticeDetails]);
 
+  const trackedReceipts = useMemo(() => summary.cases.map((caseRecord) => caseRecord.receiptNumber), [summary.cases]);
+
   async function handleOpenSnapshot(snapshotId: string) {
     setBusy(snapshotId);
     try {
@@ -52,14 +62,15 @@ export function TimelineView({
 
   return (
     <div className="timeline-view">
+      <FoundCasesPanel found={found} people={summary.people} onAssign={onAssignFound} onDismiss={onDismissFound} />
       <NewSincePanel cases={summary.cases} refresh={refresh} showToast={showToast} />
 
       {summary.people.length === 0 && (
         <EmptyState
           body={
             LOCAL_MODE
-              ? "Each USCIS account holder gets their own timeline. Add the first person, then their receipts. It all stays in this browser: nothing is uploaded."
-              : "Each USCIS account holder gets their own timeline. Add the first person, then their receipts."
+              ? "Each USCIS account holder gets their own timeline. Add the first person; their cases come in from USCIS next. It all stays in this browser: nothing is uploaded."
+              : "Each USCIS account holder gets their own timeline. Add the first person; their cases come in from USCIS next."
           }
           action={<AddPersonInline busy={busy === "add-person"} showToast={showToast} onAdd={addNewPerson} defaultOpen />}
         />
@@ -71,6 +82,7 @@ export function TimelineView({
           person={person}
           people={summary.people}
           cases={summary.cases.filter((caseRecord) => caseRecord.personId === person.id)}
+          trackedReceipts={trackedReceipts}
           facts={summary.facts}
           noticeDetailsByLetterId={noticeDetailsByLetterId}
           busy={busy}

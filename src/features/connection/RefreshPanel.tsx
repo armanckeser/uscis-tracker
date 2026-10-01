@@ -1,16 +1,18 @@
 import { ArrowUpRight } from "lucide-react";
 import { USCIS_ACCOUNT_URL } from "../../lib/uscis";
 import { buildImportFallbackBookmarklet, buildRefreshBookmarklet, buildShortcutScript } from "../../lib/bookmarklet";
-import { LOCAL_MODE, appUrl, isStandalone } from "../../lib/mode";
+import { LOCAL_MODE, isStandalone } from "../../lib/mode";
 import type { CaseRecord } from "../../lib/types";
 import type { ShowToast } from "../../hooks/useToast";
 import { BookmarkletRow } from "./BookmarkletRow";
 import { ScriptBlock } from "./ScriptBlock";
+import { refreshTarget } from "./refreshTarget";
 
-// The refresh setup, done once. One bookmark covers every tracked case for both
-// people: the import endpoint works out whose case a response is from, so the
-// script carries no identity and does not need to know which account it is
-// running in. Cases belonging to the other account are simply counted as denied.
+// The refresh setup, done once. One bookmark covers every case for both people:
+// it finds the cases on whichever account is signed in, and the import works out
+// whose case a response is from, so the script carries no identity and does not
+// need to know which account it is running in. Cases belonging to the other
+// account are simply counted as denied.
 export function RefreshPanel({
   cases,
   showToast,
@@ -19,10 +21,7 @@ export function RefreshPanel({
   showToast: ShowToast;
 }) {
   const receipts = cases.map((caseRecord) => caseRecord.receiptNumber);
-  // With no server to post to, the scripts carry the cases back in the URL
-  // fragment, so they need the app's full address rather than just its origin.
-  const delivery = LOCAL_MODE ? "fragment" : "post";
-  const tracker = LOCAL_MODE ? appUrl() : window.location.origin;
+  const { trackerOrigin: tracker, delivery } = refreshTarget();
 
   return (
     <section className="section-panel">
@@ -55,7 +54,8 @@ export function RefreshPanel({
           </a>
         </li>
         <li>
-          Tap the bookmark. It reads every case that account can see and brings you back here with the result.
+          On the page that lists your cases, tap the bookmark. It reads every case that account can see, including ones
+          not tracked yet, and brings you back here with the result.
           {LOCAL_MODE && " The cases travel in the page address, straight into this browser. Nothing is sent to a server."}
         </li>
       </ol>
@@ -64,8 +64,8 @@ export function RefreshPanel({
         label="Refresh cases"
         hint={
           receipts.length === 0
-            ? "Add a case first — the bookmark covers whatever is tracked when you copy it."
-            : `Covers ${receipts.length} ${receipts.length === 1 ? "case" : "cases"}. Copy it again after adding a case.`
+            ? "Save it once. It finds the cases on whichever account is signed in."
+            : `Covers your ${receipts.length} tracked ${receipts.length === 1 ? "case" : "cases"} and finds new ones on the account. No need to save it again.`
         }
         code={buildRefreshBookmarklet({ trackerOrigin: tracker, receipts, delivery })}
         showToast={showToast}
@@ -75,7 +75,9 @@ export function RefreshPanel({
         <summary>Set this up as an iPhone Shortcut instead</summary>
         <p className="field-help">
           A Shortcut runs from Safari's share sheet, which is a real gesture instead of typing a bookmark name into the
-          address bar. Same mechanism underneath. Set up once:
+          address bar. Same mechanism underneath.
+          {!LOCAL_MODE && " It refreshes the cases tracked when you copy it; a case that is new to the tracker comes in through the bookmark."}{" "}
+          Set up once:
         </p>
         <ol className="refresh-steps">
           <li>

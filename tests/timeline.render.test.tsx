@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 import { TimelineView } from "../src/features/timeline/TimelineView.js";
+import type { FoundCase } from "../src/lib/refreshHandoff.js";
 import { caseSummary, change, event, noticeChange, personSummary, silent, summaryOf } from "./support/v2.js";
 
 // Guards the status board against regressions in what it surfaces from a real
@@ -25,7 +26,7 @@ function i485Changes(caseId = "case-1") {
   ];
 }
 
-function render(cases = [caseSummary(i485Changes())], people = [personSummary()]) {
+function render(cases = [caseSummary(i485Changes())], people = [personSummary()], found: FoundCase[] = []) {
   return renderToString(
     <TimelineView
       summary={summaryOf(people, cases)}
@@ -33,6 +34,9 @@ function render(cases = [caseSummary(i485Changes())], people = [personSummary()]
       refresh={async () => null}
       onOpenSnapshot={async () => {}}
       onOpenConnection={() => {}}
+      found={found}
+      onAssignFound={async () => {}}
+      onDismissFound={() => {}}
     />,
   ).replaceAll("<!-- -->", "");
 }
@@ -45,6 +49,7 @@ describe("TimelineView", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it("leads_the_case_card_with_the_current_status_and_what_it_means", () => {
@@ -103,9 +108,37 @@ describe("TimelineView", () => {
     expect(html).toContain("I-485 · I-765");
   });
 
-  it("designs_the_empty_state_for_a_person_with_no_cases", () => {
+  it("walks_a_person_with_no_cases_to_the_bookmark_instead_of_a_receipt_form", () => {
+    // Regression guarded: this used to say "Add a receipt number for Alex"
+    // beside a "+ Case" button, so the first thing a new user did was type a
+    // receipt number by hand. The bookmark finds the cases; it comes first.
+    vi.stubGlobal("window", { location: { origin: "https://uscis.example.com" } });
     const html = render([], [personSummary()]);
 
-    expect(html).toContain("Add a receipt number for Alex");
+    expect(html).toContain("Bring in Alex&#x27;s cases");
+    expect(html).toContain("Refresh cases");
+    expect(html).toContain("Sign in to myUSCIS");
+    expect(html).toContain("Enter a receipt number instead");
+    expect(html).not.toContain("Add a case for Alex");
+  });
+
+  it("tells_a_second_person_to_sign_in_as_themselves_without_repeating_the_setup", () => {
+    vi.stubGlobal("window", { location: { origin: "https://uscis.example.com" } });
+    const html = render([caseSummary(i485Changes())], [personSummary(), personSummary({ id: "p2", name: "Sam", caseCount: 0 })]);
+
+    expect(html).toContain("No cases for Sam yet.");
+    expect(html).not.toContain("Bring in Sam");
+    // Alex has cases, so typing one in stays available on his header.
+    expect(html).toContain("Add a case for Alex");
+  });
+
+  it("asks_whose_the_cases_a_refresh_found_are", () => {
+    const found = [{ raw: {}, receiptNumber: "IOE9912345777", formType: "I-765" }];
+    const html = render([caseSummary(i485Changes())], [personSummary(), personSummary({ id: "p2", name: "Sam" })], found);
+
+    expect(html).toContain("1 new case found on USCIS");
+    expect(html).toContain("IOE9912345777");
+    expect(html).toContain("Whose is it?");
+    expect(html).toContain("Don&#x27;t track it");
   });
 });

@@ -6,7 +6,7 @@ import { ProfileSheet } from "../prediction/ProfileSheet";
 import { AddCaseInline } from "./AddCaseInline";
 import { CaseCard } from "./CaseCard";
 import { HistoryList } from "./HistoryList";
-import { EmptyState } from "../../components/EmptyState";
+import { GetCasesGuide } from "./GetCasesGuide";
 
 /** The green card case reads first; its companions follow. */
 const formRank = (form: string | null) => (/485/.test(form ?? "") ? 0 : 1);
@@ -17,6 +17,7 @@ export function PersonSection({
   person,
   people,
   cases,
+  trackedReceipts,
   facts,
   noticeDetailsByLetterId,
   busy,
@@ -30,6 +31,8 @@ export function PersonSection({
   person: PersonRecord;
   people: PersonRecord[];
   cases: CaseRecord[];
+  /** Every receipt in the tracker, not just this person's: one bookmark covers them all. */
+  trackedReceipts: string[];
   facts: CaseFact[];
   noticeDetailsByLetterId: Map<string, NoticeDetail>;
   busy: string | null;
@@ -46,19 +49,32 @@ export function PersonSection({
     <section className="person" aria-label={`${person.name}`}>
       <header className="person-header">
         <h2>{person.name}</h2>
-        <AddCaseInline
+        {cases.length > 0 && (
+          <AddCaseInline
+            personName={person.name}
+            busy={busy === `add-case-${person.id}`}
+            showToast={showToast}
+            onAdd={(receiptNumber) => onAddCase(person.id, receiptNumber)}
+          />
+        )}
+      </header>
+
+      {/* With no cases, getting them in is the one thing to do, so it leads. */}
+      {cases.length === 0 && (
+        <GetCasesGuide
           personName={person.name}
+          receipts={trackedReceipts}
+          firstRun={trackedReceipts.length === 0}
           busy={busy === `add-case-${person.id}`}
           showToast={showToast}
-          onAdd={(receiptNumber) => onAddCase(person.id, receiptNumber)}
+          onAddCase={(receiptNumber) => onAddCase(person.id, receiptNumber)}
+          onOpenConnection={onOpenConnection}
         />
-      </header>
+      )}
 
       <PlaceInLine person={person} people={people} onEditProfile={() => setProfileOpen(true)} />
 
-      {cases.length === 0 ? (
-        <EmptyState body={`Add a receipt number for ${person.name} to start their timeline.`} />
-      ) : (
+      {cases.length > 0 && (
         <>
           {[...cases].sort((a, b) => formRank(a.formType) - formRank(b.formType)).map((caseRecord) => (
             <CaseCard

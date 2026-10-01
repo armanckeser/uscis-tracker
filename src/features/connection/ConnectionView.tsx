@@ -73,7 +73,7 @@ export function ConnectionView({
 
         <div className="person-session-list">
           {people.length === 0 ? (
-            <EmptyState body="Add each USCIS account holder, then their receipts." icon={<Users size={22} />} />
+            <EmptyState body="Add each USCIS account holder. Their cases come in when they refresh." icon={<Users size={22} />} />
           ) : (
             people.map((person) => (
               <PersonRefreshCard

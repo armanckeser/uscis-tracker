@@ -23,7 +23,7 @@ function App() {
   const { pushState, pushBusy, togglePush } = usePush(summary?.config.vapidPublicKey, showToast);
   const { snapshot: selectedSnapshot, open: openSnapshot, close: closeSnapshot } = useSnapshotViewer(showToast);
   const [freshnessOpen, setFreshnessOpen] = useState(false);
-  useRefreshHandoff(showToast, refresh);
+  const { found, assignFound, dismissFound } = useRefreshHandoff(showToast, refresh);
 
   const checkedAt = summary ? latestCheckedAt(summary.cases) : null;
 
@@ -40,6 +40,9 @@ function App() {
               <TimelineView summary={summary} showToast={showToast} refresh={refresh}
                 onOpenSnapshot={openSnapshot}
                 onOpenConnection={() => navigate("connection")}
+                found={found}
+                onAssignFound={assignFound}
+                onDismissFound={dismissFound}
               />
             ) : (
               <ConnectionView

@@ -6,13 +6,19 @@ import type { ShowToast } from "../../hooks/useToast";
 // Inline receipt-add for one person: a "+" that opens a single-field form. The
 // person is fixed (it lives under their header), so unlike the old full page
 // there is no person picker to get wrong.
+//
+// Typing a receipt is the way round, not the way in: a refresh finds the cases
+// itself. Where the refresh is being offered, `triggerLabel` turns the trigger
+// into a quiet line of text beside it.
 export function AddCaseInline({
   personName,
   busy,
   showToast,
   onAdd,
+  triggerLabel,
 }: {
   personName: string;
+  triggerLabel?: string;
   busy: boolean;
   showToast: ShowToast;
   onAdd: (receiptNumber: string) => Promise<void>;
@@ -30,6 +36,14 @@ export function AddCaseInline({
     await onAdd(normalized);
     setReceipt("");
     setOpen(false);
+  }
+
+  if (!open && triggerLabel) {
+    return (
+      <button className="text-button" type="button" onClick={() => setOpen(true)}>
+        {triggerLabel}
+      </button>
+    );
   }
 
   if (!open) {

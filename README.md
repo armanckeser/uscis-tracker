@@ -35,11 +35,12 @@ USCIS never announces), and estimates when the visa bulletin will reach your pri
 
 ## How to use it
 
-1. **Add the people and their receipt numbers.** Each person is one myUSCIS account.
-2. **Save the refresh bookmark.** On the Connection screen, copy *Refresh cases* into a
-   bookmark (or an iPhone Shortcut).
-3. **Sign in to myUSCIS and tap it.** You land back on the tracker with every change
-   marked. Do it whenever you'd have checked USCIS anyway.
+1. **Add a person.** Each person is one myUSCIS account.
+2. **Save the refresh bookmark.** The tracker shows *Refresh cases* as soon as there is
+   someone to bring cases in for. Save it once (or set it up as an iPhone Shortcut).
+3. **Sign in to myUSCIS and tap it** on the page that lists your cases. It finds them
+   itself, so there are no receipt numbers to type, and you land back on the tracker
+   with every change marked. Do it whenever you'd have checked USCIS anyway.
 
 ## Two ways to run it
 

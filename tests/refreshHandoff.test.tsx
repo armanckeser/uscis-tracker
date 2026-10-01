@@ -45,10 +45,10 @@ describe("describeRefresh", () => {
     expect(tone).toBe("error");
   });
 
-  it("reports_an_empty_run_as_nothing_delivered", () => {
+  it("tells_an_empty_run_where_the_cases_are_listed", () => {
     const { tone, message } = describeRefresh({ sent: 0, denied: 0, failed: 0, codes: "" });
 
-    expect(message).toBe("Nothing was delivered. Open USCIS, sign in, then tap refresh again.");
+    expect(message).toBe("No cases were found. Sign in to myUSCIS, open the page that lists your cases, then tap refresh again.");
     expect(tone).toBe("error");
   });
 

@@ -32,7 +32,7 @@ export function PersonRefreshCard({
 
       <div className="api-case-links" aria-label={`USCIS API links for ${person.name}`}>
         {personCases.length === 0 ? (
-          <p>Add a case first. Its USCIS API link will appear here.</p>
+          <p>No cases yet. They appear here after a refresh.</p>
         ) : (
           personCases.map((caseRecord) => (
             <a

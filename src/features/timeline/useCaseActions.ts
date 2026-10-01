@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { addCase, addPerson, deleteCase } from "../../lib/api";
+import { ignoreReceipts, unignoreReceipt } from "../../lib/ignoredReceipts";
 import type { PersonRecord, RefreshSummary } from "../../lib/types";
 import type { ShowToast } from "../../hooks/useToast";
 
@@ -24,6 +25,7 @@ export function useCaseActions({
       // refreshes from a signed-in USCIS tab, so say that instead of implying the
       // tracker is about to go and look.
       await addCase({ receiptNumber, personId });
+      unignoreReceipt(receiptNumber);
       showToast("success", `${receiptNumber} added. Refresh from USCIS to record ${person?.name ?? "their"} first snapshot.`);
       await refresh(true);
     } catch (error) {
@@ -53,6 +55,8 @@ export function useCaseActions({
       setBusy(caseId);
       try {
         await deleteCase(caseId);
+        // A refresh finds every case on the account, this one included.
+        ignoreReceipts([receiptNumber]);
         showToast("success", `${receiptNumber} was deleted.`);
         await refresh(true);
       } catch (error) {

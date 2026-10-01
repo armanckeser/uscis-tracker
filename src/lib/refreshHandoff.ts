@@ -1,3 +1,4 @@
+import { normalizeUscisResponse } from "../../shared/domain";
 import { formatShortDay } from "./format";
 import { lastMovementAt, unreadEntries } from "./unread";
 import type { Summary } from "./types";
@@ -21,33 +22,101 @@ export type RefreshHandoff = {
   failed: number;
   /** HTTP statuses seen on the refusals, for diagnosing an unexpected one. */
   codes: string;
-  /**
-   * Read from USCIS but refused by the tracker, such as a case deleted since the
-   * bookmark was saved. Only the browser-only build can know this: it does the
-   * storing itself, where the self-hosted script posts blind.
-   */
+  /** Read from USCIS, but not something the tracker could store. */
   unstored?: number;
+  /** Of `sent`, the cases the tracker had never seen and started tracking. */
+  added?: number;
+  /** Who those were added for. */
+  addedFor?: string;
+  /** New cases waiting for the user to say whose they are. */
+  found?: number;
 };
 
+/** A case the refresh found on the account that the tracker does not track yet. */
+export type FoundCase = { raw: unknown; receiptNumber: string; formType: string | null };
+
+/** What the tracker holds, as far as placing a returned case needs to know. */
+export type TrackerState = {
+  /** Receipts already tracked. Each records its owner, so these just get stored. */
+  tracked: ReadonlySet<string>;
+  /** Receipts the user deleted or declined. Never offered again. */
+  ignored: ReadonlySet<string>;
+  /** The only person in the tracker, when there is exactly one. */
+  soleOwner: { id: string; name: string } | null;
+};
+
+export function trackerStateOf(summary: Summary, ignored: ReadonlySet<string>): TrackerState {
+  const [only] = summary.people;
+  return {
+    tracked: new Set(summary.cases.map((caseRecord) => caseRecord.receiptNumber)),
+    ignored,
+    soleOwner: summary.people.length === 1 && only ? { id: only.id, name: only.name } : null,
+  };
+}
+
 /**
- * Stores the cases a browser-only refresh carried back, one by one, so a single
- * response the tracker refuses does not cost the rest.
+ * Stores the cases a refresh carried back, one by one, so a single response the
+ * tracker cannot store does not cost the rest.
+ *
+ * A case the tracker has never seen needs an owner. With one person in the
+ * tracker there is nothing to ask. With more, a guess could file one person's
+ * case under the other, so those are handed back for the user to place.
  */
 export async function storeHandoff(
   payload: HandoffPayload,
-  importSnapshot: (input: { raw: unknown }) => Promise<unknown>,
-): Promise<RefreshHandoff> {
+  tracker: TrackerState,
+  importSnapshot: (input: { raw: unknown; personId?: string }) => Promise<unknown>,
+): Promise<{ handoff: RefreshHandoff; found: FoundCase[] }> {
   let sent = 0;
   let unstored = 0;
+  let added = 0;
+  const found: FoundCase[] = [];
+
   for (const raw of payload.cases) {
     try {
-      await importSnapshot({ raw });
-      sent += 1;
+      const data = normalizeUscisResponse(raw);
+      if (tracker.tracked.has(data.receiptNumber)) {
+        await importSnapshot({ raw });
+        sent += 1;
+      } else if (tracker.ignored.has(data.receiptNumber)) {
+        continue;
+      } else if (tracker.soleOwner) {
+        await importSnapshot({ raw, personId: tracker.soleOwner.id });
+        sent += 1;
+        added += 1;
+      } else {
+        found.push({ raw, receiptNumber: data.receiptNumber, formType: data.formType ?? null });
+      }
     } catch {
       unstored += 1;
     }
   }
-  return { sent, denied: payload.denied, failed: payload.failed, codes: payload.codes, unstored };
+
+  return {
+    handoff: {
+      sent,
+      denied: payload.denied,
+      failed: payload.failed,
+      codes: payload.codes,
+      unstored,
+      added,
+      addedFor: added > 0 ? tracker.soleOwner?.name : undefined,
+      found: found.length,
+    },
+    found,
+  };
+}
+
+/** One run can report twice: counts in the address for what it posted, cases in the fragment for what it could not. */
+export function combineHandoffs(posted: RefreshHandoff | null, stored: RefreshHandoff | null): RefreshHandoff | null {
+  if (!posted || !stored) return posted ?? stored;
+  return {
+    ...stored,
+    sent: posted.sent + stored.sent,
+    denied: posted.denied + stored.denied,
+    failed: posted.failed + stored.failed,
+    codes: [posted.codes, stored.codes].filter(Boolean).join("-"),
+  };
 }
 
 export function parseRefreshHandoff(search: string): RefreshHandoff | null {
@@ -101,13 +170,27 @@ export function describeRefresh(
   handoff: RefreshHandoff,
   outcome: RefreshOutcome | null = null,
 ): { tone: ToastTone; message: string } {
-  const { sent, denied, failed, codes, unstored = 0 } = handoff;
+  const { sent, denied, failed, codes, unstored = 0, added = 0, addedFor, found = 0 } = handoff;
 
-  if (sent === 0 && denied === 0 && failed === 0 && unstored === 0) {
-    return { tone: "error", message: "Nothing was delivered. Open USCIS, sign in, then tap refresh again." };
+  if (sent === 0 && denied === 0 && failed === 0 && unstored === 0 && found === 0) {
+    return {
+      tone: "error",
+      message: "No cases were found. Sign in to myUSCIS, open the page that lists your cases, then tap refresh again.",
+    };
   }
 
-  const parts = [sent > 0 ? `${sent} ${sent === 1 ? "case" : "cases"} read.` : "No cases were read."];
+  const parts: string[] = [];
+  if (sent > 0) parts.push(`${sent} ${sent === 1 ? "case" : "cases"} read.`);
+  else if (found === 0) parts.push("No cases were read.");
+
+  if (added > 0) {
+    const owner = addedFor ? ` for ${addedFor}` : "";
+    parts.push(added === 1 ? `1 is new and was added${owner}.` : `${added} are new and were added${owner}.`);
+  }
+
+  if (found > 0) {
+    parts.push(`${found} new ${found === 1 ? "case" : "cases"} found. Choose who ${found === 1 ? "it belongs" : "they belong"} to.`);
+  }
 
   if (denied > 0) {
     parts.push(
@@ -123,10 +206,10 @@ export function describeRefresh(
   }
 
   if (unstored > 0) {
-    parts.push(`${unstored} ${unstored === 1 ? "is" : "are"} not tracked here any more. Add the case, then refresh again.`);
+    parts.push(`${unstored} came back in a form the tracker could not store.`);
   }
 
-  if (sent > 0 && failed === 0 && unstored === 0 && outcome?.newChanges === 0) {
+  if (sent > 0 && failed === 0 && unstored === 0 && added === 0 && found === 0 && outcome?.newChanges === 0) {
     parts.push(
       outcome.lastMovementIso
         ? `Nothing new since ${formatShortDay(outcome.lastMovementIso)}.`
@@ -134,5 +217,5 @@ export function describeRefresh(
     );
   }
 
-  return { tone: failed > 0 || unstored > 0 || sent === 0 ? "error" : "info", message: parts.join(" ") };
+  return { tone: failed > 0 || unstored > 0 || (sent === 0 && found === 0) ? "error" : "info", message: parts.join(" ") };
 }

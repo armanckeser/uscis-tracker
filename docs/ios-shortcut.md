@@ -4,9 +4,15 @@ The refresh has to run inside a browser already signed in to myUSCIS — see
 [acquisition-research.md](acquisition-research.md) for why nothing can do it
 unattended. On a phone there are two ways to trigger that, and a fallback.
 
-The app generates the exact script and bookmark for your tracked cases on the
-**Refresh** screen. Copy them from there rather than from this file, so the
-receipt list stays current.
+The app generates the exact script and bookmark on the **Connection** screen.
+Copy them from there rather than from this file.
+
+The bookmark finds the account's cases itself: it reads the receipt numbers off
+the myUSCIS page it is run on, and remembers the ones it has read. Run it on the
+page that lists your cases the first time. The self-hosted Shortcut is the one
+exception. It reports a sentence instead of opening the tracker, so it has no way
+to hand over a case the tracker has never seen, and refreshes only the cases
+tracked when you copied it.
 
 ## Option A — Shortcut from the share sheet (recommended)
 
