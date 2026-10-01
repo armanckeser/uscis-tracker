@@ -23,8 +23,10 @@ USCIS never announces), and estimates when the visa bulletin will reach your pri
   reviewing" and "Biometrics scheduled", with a plain explanation of each.
 - **Built for a household.** Each person keeps their own cases and myUSCIS account; a
   spouse can inherit the principal's category and priority date.
-- **Push notifications** on real movement, so whoever didn't run the refresh finds out too.
-- **Self-hosted.** Receipt numbers and case data never leave your server.
+- **Private either way.** Use it in your browser, where everything stays in that browser
+  and nothing is uploaded, or self-host it and keep it on your own server.
+- **Push notifications** on real movement when self-hosted, so whoever didn't run the
+  refresh finds out too.
 
 <p align="center">
   <img src="img/place-in-line.png" alt="Your place in line: EB-3, all other countries, priority date Sep 12, 2024. The cutoff is 120 days behind and has advanced a net 23 days a month, so the date is likely current around April 2027." width="330" />
@@ -38,6 +40,28 @@ USCIS never announces), and estimates when the visa bulletin will reach your pri
    bookmark (or an iPhone Shortcut).
 3. **Sign in to myUSCIS and tap it.** You land back on the tracker with every change
    marked. Do it whenever you'd have checked USCIS anyway.
+
+## Two ways to run it
+
+**In your browser, with nothing to install:** open
+[armanckeser.github.io/uscis-tracker](https://armanckeser.github.io/uscis-tracker/). It is
+a static page with no server behind it. People, cases and every snapshot are stored in
+that browser's own storage (IndexedDB), and the refresh bookmark hands case data to the
+page in the URL fragment, the one part of an address a browser never sends. The page's
+Content-Security-Policy lets it reach only itself and the public visa bulletin dataset.
+
+**Self-hosted,** if you want what a server adds:
+
+| | In your browser | Self-hosted |
+| --- | --- | --- |
+| Setup | Open the page | Docker, and a server your phone can reach |
+| Where your data lives | That one browser. Nothing is uploaded | Your server's Postgres |
+| Push notifications | No, there is nothing to send them | Yes |
+| Two people, several devices | Each browser has its own copy; move it with a backup file | One shared tracker |
+| If the browser's data is cleared | Gone, unless you kept a backup file | Unaffected |
+
+On iPhone, use the browser version in Safari rather than adding it to the Home Screen: a
+Home Screen app keeps storage of its own, apart from the Safari tab the refresh lands in.
 
 ## Why This Exists
 
@@ -92,14 +116,19 @@ npm install
 cp server/.env.example server/.env
 docker compose up -d postgres
 npm run dev          # frontend on :5173, API on :4000
+npm run dev:static   # the browser-only tracker, no API or database
 npm test             # vitest, no database needed
 npm run build
+npm run build:static # what GitHub Pages serves; pass --base=/<repo>/ for a project site
 ```
 
 - **Frontend:** React 19 PWA with Vite and Base UI. Two views, Timeline and Connection.
 - **Backend:** Hono on Node. Stores every snapshot in Postgres, diffs it against the last,
   and sends Web Push on meaningful movement. It holds no USCIS credentials.
-- **Shared:** `shared/` holds the timeline, stage and prediction logic used by both sides.
+- **Shared:** `shared/` holds the diffing, timeline, stage and prediction logic used by both sides.
+- **Browser-only build:** `src/lib/backend/local.ts` does what the API does, against
+  IndexedDB, behind the same interface (`src/lib/api.ts`). `src/lib/handoff.ts` is how
+  the refresh script gets case data to it without a server.
 
 [DOMAIN.md](DOMAIN.md) maps what the USCIS API actually returns and what each field means.
 

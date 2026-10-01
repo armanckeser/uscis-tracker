@@ -3,8 +3,10 @@
 // because one malformed row must not stop the rest of the dataset loading.
 
 import { z } from "zod";
-import type { BulletinRow, Chart, UscisChartChoice } from "../shared/predict.js";
-import type { ProcessingTimeRow } from "../shared/expectation.js";
+import type { BulletinRow, Chart, UscisChartChoice } from "./predict.js";
+import type { ProcessingTimeRow } from "./expectation.js";
+
+export const DEFAULT_BULLETIN_BASE_URL = "https://raw.githubusercontent.com/armanckeser/visa-bulletin-data/main/data";
 
 const chartSchema = z.enum(["final_action", "dates_for_filing"]);
 

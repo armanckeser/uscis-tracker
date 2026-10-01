@@ -6,6 +6,7 @@ import { NewSincePanel } from "./NewSincePanel";
 import { PersonSection } from "./PersonSection";
 import { AddPersonInline } from "./AddPersonInline";
 import { useCaseActions } from "./useCaseActions";
+import { LOCAL_MODE } from "../../lib/mode";
 
 // The home page: what changed, then per person their place in line, a status
 // card per case, and one combined history.
@@ -55,7 +56,11 @@ export function TimelineView({
 
       {summary.people.length === 0 && (
         <EmptyState
-          body="Each USCIS account holder gets their own timeline. Add the first person, then their receipts."
+          body={
+            LOCAL_MODE
+              ? "Each USCIS account holder gets their own timeline. Add the first person, then their receipts. It all stays in this browser: nothing is uploaded."
+              : "Each USCIS account holder gets their own timeline. Add the first person, then their receipts."
+          }
           action={<AddPersonInline busy={busy === "add-person"} showToast={showToast} onAdd={addNewPerson} defaultOpen />}
         />
       )}
@@ -80,6 +85,15 @@ export function TimelineView({
 
       {summary.people.length > 0 && (
         <AddPersonInline busy={busy === "add-person"} showToast={showToast} onAdd={addNewPerson} />
+      )}
+
+      {LOCAL_MODE && summary.people.length > 0 && (
+        <p className="local-note">
+          Stored only in this browser. Nothing is uploaded.{" "}
+          <button type="button" className="text-button" onClick={onOpenConnection}>
+            Back up
+          </button>
+        </p>
       )}
     </div>
   );

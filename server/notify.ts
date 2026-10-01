@@ -6,7 +6,7 @@
 
 import { easternDate } from "../shared/dates.js";
 import { describeChange } from "../shared/timeline.js";
-import type { ChangeDraft } from "./domain.js";
+import type { ChangeDraft } from "../shared/domain.js";
 
 export type PushItem = {
   title: string;

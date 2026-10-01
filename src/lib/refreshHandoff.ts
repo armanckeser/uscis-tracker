@@ -2,6 +2,7 @@ import { formatShortDay } from "./format";
 import { lastMovementAt, unreadEntries } from "./unread";
 import type { Summary } from "./types";
 import type { ToastTone } from "../hooks/useToast";
+import type { HandoffPayload } from "./handoff";
 
 /**
  * What a refresh run reported when it handed back to the tracker.
@@ -20,7 +21,34 @@ export type RefreshHandoff = {
   failed: number;
   /** HTTP statuses seen on the refusals, for diagnosing an unexpected one. */
   codes: string;
+  /**
+   * Read from USCIS but refused by the tracker, such as a case deleted since the
+   * bookmark was saved. Only the browser-only build can know this: it does the
+   * storing itself, where the self-hosted script posts blind.
+   */
+  unstored?: number;
 };
+
+/**
+ * Stores the cases a browser-only refresh carried back, one by one, so a single
+ * response the tracker refuses does not cost the rest.
+ */
+export async function storeHandoff(
+  payload: HandoffPayload,
+  importSnapshot: (input: { raw: unknown }) => Promise<unknown>,
+): Promise<RefreshHandoff> {
+  let sent = 0;
+  let unstored = 0;
+  for (const raw of payload.cases) {
+    try {
+      await importSnapshot({ raw });
+      sent += 1;
+    } catch {
+      unstored += 1;
+    }
+  }
+  return { sent, denied: payload.denied, failed: payload.failed, codes: payload.codes, unstored };
+}
 
 export function parseRefreshHandoff(search: string): RefreshHandoff | null {
   const params = new URLSearchParams(search);
@@ -73,9 +101,9 @@ export function describeRefresh(
   handoff: RefreshHandoff,
   outcome: RefreshOutcome | null = null,
 ): { tone: ToastTone; message: string } {
-  const { sent, denied, failed, codes } = handoff;
+  const { sent, denied, failed, codes, unstored = 0 } = handoff;
 
-  if (sent === 0 && denied === 0 && failed === 0) {
+  if (sent === 0 && denied === 0 && failed === 0 && unstored === 0) {
     return { tone: "error", message: "Nothing was delivered. Open USCIS, sign in, then tap refresh again." };
   }
 
@@ -94,7 +122,11 @@ export function describeRefresh(
     parts.push(`${failed} could not be read${detail}.`);
   }
 
-  if (sent > 0 && failed === 0 && outcome?.newChanges === 0) {
+  if (unstored > 0) {
+    parts.push(`${unstored} ${unstored === 1 ? "is" : "are"} not tracked here any more. Add the case, then refresh again.`);
+  }
+
+  if (sent > 0 && failed === 0 && unstored === 0 && outcome?.newChanges === 0) {
     parts.push(
       outcome.lastMovementIso
         ? `Nothing new since ${formatShortDay(outcome.lastMovementIso)}.`
@@ -102,5 +134,5 @@ export function describeRefresh(
     );
   }
 
-  return { tone: failed > 0 || sent === 0 ? "error" : "info", message: parts.join(" ") };
+  return { tone: failed > 0 || unstored > 0 || sent === 0 ? "error" : "info", message: parts.join(" ") };
 }

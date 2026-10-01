@@ -16,8 +16,8 @@ import {
   normalizeUscisResponse,
   type ChangeDraft,
   type UscisCaseData,
-} from "./domain.js";
-import { assembleSummary, bulletinHistory, pageTimeline, type CaseInput, type PersonInput } from "./assemble.js";
+} from "../shared/domain.js";
+import { assembleSummary, bulletinHistory, pageTimeline, type CaseInput, type PersonInput } from "../shared/assemble.js";
 import { bulletinBaseUrl, loadBulletinData, loadProcessingTimes, syncDatasets } from "./bulletinSync.js";
 import { selectNotifiable, type PushItem } from "./notify.js";
 import { bulletinChangeNotice, predictForPerson } from "../shared/predict.js";
@@ -275,7 +275,7 @@ async function upsertCase(client: pg.PoolClient, data: UscisCaseData, personId: 
 
 async function saveSnapshot(client: pg.PoolClient, caseRow: CaseRow, data: UscisCaseData) {
   const checkedAt = new Date().toISOString();
-  const rawHash = hashCaseData(data);
+  const rawHash = await hashCaseData(data);
 
   const { rows: previousRows } = await client.query<{ raw_data: UscisCaseData }>(
     `SELECT raw_data FROM case_snapshots WHERE case_id = $1 ORDER BY checked_at DESC LIMIT 1`,

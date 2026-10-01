@@ -6,7 +6,7 @@ import {
   hashCaseData,
   isValidReceipt,
   normalizeUscisResponse,
-} from "../server/domain.js";
+} from "../shared/domain.js";
 
 const baseline = {
   receiptNumber: "IOE1234567890",
@@ -48,10 +48,12 @@ describe("USCIS domain logic", () => {
     expect(() => normalizeUscisResponse({ data: baseline })).not.toThrow();
   });
 
-  it("hashes equivalent data with stable key order", () => {
+  it("hashes equivalent data with stable key order", async () => {
     const a = { receiptNumber: "IOE1234567890", formType: "I-485" };
     const b = { formType: "I-485", receiptNumber: "IOE1234567890" };
-    expect(hashCaseData(a)).toBe(hashCaseData(b));
+    expect(await hashCaseData(a)).toBe(await hashCaseData(b));
+    // The digest itself is pinned: the browser build and the server must agree on it.
+    expect(await hashCaseData(a)).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("diffs new events by eventId and notices by letterId", () => {

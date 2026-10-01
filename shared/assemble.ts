@@ -1,12 +1,12 @@
 // Builds the /api/summary payload from stored rows. Pure so the shape the UI
 // depends on is testable without a database.
 
-import type { BulletinHistory, BulletinPoint, CaseSummary, PersonSummary, RawChange, SummaryResponse, TimelinePage } from "../shared/api.js";
-import { predictForCase, type ProcessingTimeRow } from "../shared/expectation.js";
-import { predictForPerson, selectSeries, type BulletinData, type CutoffPoint } from "../shared/predict.js";
-import { resolveProfile, type PersonProfileInput } from "../shared/profile.js";
-import { deriveStage } from "../shared/stage.js";
-import { normalizeTimeline, type ChangeRecord, type FactRecord, type TimelineEntry } from "../shared/timeline.js";
+import type { BulletinHistory, BulletinPoint, CaseSummary, PersonSummary, RawChange, SummaryResponse, TimelinePage } from "./api.js";
+import { predictForCase, type ProcessingTimeRow } from "./expectation.js";
+import { predictForPerson, selectSeries, type BulletinData, type CutoffPoint } from "./predict.js";
+import { resolveProfile, type PersonProfileInput } from "./profile.js";
+import { deriveStage } from "./stage.js";
+import { normalizeTimeline, type ChangeRecord, type FactRecord, type TimelineEntry } from "./timeline.js";
 
 export type PersonInput = PersonProfileInput & {
   name: string;

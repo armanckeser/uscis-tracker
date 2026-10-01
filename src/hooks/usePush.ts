@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { disablePush, enablePush, getPushState } from "../lib/push";
+import { LOCAL_MODE } from "../lib/mode";
 import type { ShowToast } from "./useToast";
 
 export type PushState = Awaited<ReturnType<typeof getPushState>>;
@@ -10,6 +11,8 @@ export function usePush(vapidPublicKey: string | null | undefined, showToast: Sh
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    // No server, no push: there is no state to read and no worker to wait on.
+    if (LOCAL_MODE) return;
     void getPushState().then(setPushState);
   }, []);
 

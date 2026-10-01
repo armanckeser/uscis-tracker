@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildChanges } from "../server/domain.js";
+import { buildChanges } from "../shared/domain.js";
 import { selectNotifiable } from "../server/notify.js";
 
 const prev = { receiptNumber: "IOE1234567890", formType: "I-485", caseStatus: "Case Was Received", updatedAtTimestamp: "2026-01-01T15:00:00.000Z", closed: false, events: [], notices: [] };

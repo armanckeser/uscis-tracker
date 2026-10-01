@@ -18,14 +18,26 @@
 // the tracker, which is same-origin with its own API and reports the truth.
 // Navigation is also the cheaper interaction on a phone: no alert to dismiss,
 // and it lands on the screen the user was going to open next anyway.
+//
+// The browser-only build has no import endpoint to POST to. There the same
+// scripts pack what they read into the URL fragment and navigate to the tracker,
+// which stores it itself (delivery "fragment", see handoff.ts). Nothing is sent
+// anywhere: a fragment never leaves the browser.
+
+import { ENCODER_JS, HANDOFF_PARAM } from "./handoff.js";
 
 const USCIS_HOST_SUFFIX = "my.uscis.gov";
 const CASE_API_PATH = "/account/case-service/api/cases/";
 const IMPORT_PATH = "/api/snapshots/import";
 
+export type Delivery = "post" | "fragment";
+
 export type RefreshInput = {
+  /** "post": the tracker's origin. "fragment": the full address of the app, ending in "/". */
   trackerOrigin: string;
   receipts: readonly string[];
+  /** How a read case reaches the tracker. Defaults to "post", the self-hosted API. */
+  delivery?: Delivery;
 };
 
 function jsString(value: string): string {
@@ -47,19 +59,35 @@ function jsString(value: string): string {
  * Sign in again and retry." The statuses are carried back so an unexpected one is
  * diagnosable instead of guessed at.
  */
-function readAllCasesJs(): string {
+function readAllCasesJs(delivery: Delivery): string {
+  const deliver =
+    delivery === "fragment"
+      ? `D.push(raw);`
+      : `await fetch(T+${jsString(IMPORT_PATH)},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});`;
   return (
     `let sent=0,denied=0,failed=0;const C=[];` +
+    (delivery === "fragment" ? `const D=[];` : ``) +
     `for(const r of R){try{` +
     `const res=await fetch(${jsString(CASE_API_PATH)}+r,{credentials:"include",headers:{Accept:"application/json"}});` +
     `if(!res.ok){if(C.indexOf(res.status)<0)C.push(res.status);` +
     `if(res.status===401||res.status===403||res.status===404){denied++;}else{failed++;}continue;}` +
     `const raw=await res.json();` +
-    `await fetch(T+${jsString(IMPORT_PATH)},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});` +
+    deliver +
     `sent++;` +
     `}catch(e){failed++;if(C.indexOf("err")<0)C.push("err");}}`
   );
 }
+
+/**
+ * An expression for the tracker address carrying `payload` in its fragment.
+ * Expects `T` and `E` in scope. The "#" is built from its character code because
+ * the script is itself a URL, and a literal one would start that URL's fragment.
+ */
+function fragmentUrlJs(payload: string): string {
+  return `T+String.fromCharCode(35)+${jsString(HANDOFF_PARAM + "=")}+await E(${payload})`;
+}
+
+const READ_PAYLOAD_JS = `{v:1,cases:D,denied,failed,codes:C.join("-")}`;
 
 /**
  * Builds the single "Refresh cases" bookmarklet, covering every tracked receipt.
@@ -82,16 +110,23 @@ export function buildRefreshBookmarklet(input: RefreshInput): string {
     return `javascript:(function(){alert("USCIS Tracker: no cases are being tracked yet.");})();`;
   }
 
+  const delivery = input.delivery ?? "post";
+  const handBack =
+    delivery === "fragment"
+      ? `location.href=${fragmentUrlJs(READ_PAYLOAD_JS)};`
+      : `location.href=T+"/?sent="+sent+"&denied="+denied+"&failed="+failed+(C.length?"&codes="+C.join("-"):"");`;
+
   return (
     `javascript:(async()=>{` +
     `const T=${trackerOrigin},R=${receipts};` +
     `if(!location.host.endsWith(${jsString(USCIS_HOST_SUFFIX)})){alert("Open my.uscis.gov (signed in) first, then tap this.");return;}` +
-    readAllCasesJs() +
+    (delivery === "fragment" ? ENCODER_JS : ``) +
+    readAllCasesJs(delivery) +
     // Nothing readable at all means this browser is not signed in. Send the tab to
     // a raw case page: a top-level GET carries the session even where a
     // background fetch did not, and "Import this page" finishes the job.
     `if(sent===0&&denied>0){location.href=${jsString(CASE_API_PATH)}+R[0];return;}` +
-    `location.href=T+"/?sent="+sent+"&denied="+denied+"&failed="+failed+(C.length?"&codes="+C.join("-"):"");` +
+    handBack +
     `})();`
   );
 }
@@ -101,16 +136,21 @@ export function buildRefreshBookmarklet(input: RefreshInput): string {
  * bookmarklet navigates to a raw case JSON page on iOS: it parses the JSON the
  * page is showing and posts it. Carries no identity for the same reason.
  */
-export function buildImportFallbackBookmarklet(trackerOrigin: string): string {
+export function buildImportFallbackBookmarklet(trackerOrigin: string, delivery: Delivery = "post"): string {
   const origin = jsString(trackerOrigin);
+  const deliver =
+    delivery === "fragment"
+      ? `location.href=${fragmentUrlJs(`{v:1,cases:[raw],denied:0,failed:0,codes:""}`)};`
+      : `await fetch(T+${jsString(IMPORT_PATH)},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});` +
+        `location.href=T+"/?sent=1";`;
 
   return (
     `javascript:(async()=>{` +
     `const T=${origin};` +
+    (delivery === "fragment" ? ENCODER_JS : ``) +
     `try{` +
     `const raw=JSON.parse(document.body.innerText);` +
-    `await fetch(T+${jsString(IMPORT_PATH)},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});` +
-    `location.href=T+"/?sent=1";` +
+    deliver +
     `}catch(e){alert("Open a my.uscis.gov case JSON page first, then tap Import.");}` +
     `})();`
   );
@@ -139,11 +179,26 @@ export function buildShortcutScript(input: RefreshInput): string {
   const trackerOrigin = jsString(input.trackerOrigin);
   const receipts = JSON.stringify([...input.receipts]);
 
+  // With no server to post to, the script's result is the tracker address with
+  // the cases in its fragment, and the Shortcut's next action opens it. Every
+  // exit path returns an address, so that action never receives prose.
+  if (input.delivery === "fragment") {
+    return (
+      `(async()=>{` +
+      `const T=${trackerOrigin},R=${receipts};` +
+      ENCODER_JS +
+      `if(!location.host.endsWith(${jsString(USCIS_HOST_SUFFIX)})){completion(${fragmentUrlJs(`{v:1,cases:[],denied:0,failed:0,codes:"",note:"wrong-site"}`)});return;}` +
+      readAllCasesJs("fragment") +
+      `completion(${fragmentUrlJs(READ_PAYLOAD_JS)});` +
+      `})();`
+    );
+  }
+
   return (
     `(async()=>{` +
     `const T=${trackerOrigin},R=${receipts};` +
     `if(!location.host.endsWith(${jsString(USCIS_HOST_SUFFIX)})){completion("Open my.uscis.gov first, then share this page.");return;}` +
-    readAllCasesJs() +
+    readAllCasesJs("post") +
     `completion(sent+" read, "+denied+" not this account"+(failed?", "+failed+" failed ("+C.join("-")+")":"")+". Open the tracker to see what changed.");` +
     `})();`
   );

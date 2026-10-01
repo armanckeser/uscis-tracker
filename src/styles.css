@@ -1765,6 +1765,13 @@ details[open] > :not(summary) {
   font-weight: 400;
 }
 
+/* The browser-only build's standing answer to "where does this go?". */
+.local-note {
+  color: var(--color-soft);
+  font-size: var(--fs-label);
+  text-align: center;
+}
+
 .form-hint,
 .hint {
   font-size: var(--fs-label);

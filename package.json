@@ -8,6 +8,8 @@
     "dev:frontend": "vite --host 0.0.0.0",
     "dev:server": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
+    "dev:static": "vite --mode static",
+    "build:static": "tsc -b && vite build --mode static",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "db:schema": "psql \"$DATABASE_URL\" -f schema.sql"
@@ -34,6 +36,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/web-push": "^3.6.4",
+    "fake-indexeddb": "^6.2.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.14"

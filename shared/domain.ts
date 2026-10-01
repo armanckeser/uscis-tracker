@@ -1,8 +1,7 @@
-import crypto from "node:crypto";
-import { describeEvent } from "../shared/lifecycle.js";
-import { defaultSource, type FactSource } from "../shared/timeline.js";
+import { describeEvent } from "./lifecycle.js";
+import { defaultSource, type FactSource } from "./timeline.js";
 
-export { ET_TIME_ZONE } from "../shared/dates.js";
+export { ET_TIME_ZONE } from "./dates.js";
 
 /**
  * Raised when a response body is USCIS telling us we are not signed in, rather
@@ -105,8 +104,13 @@ export function stableStringify(value: unknown): string {
   return `{${entries.join(",")}}`;
 }
 
-export function hashCaseData(data: UscisCaseData) {
-  return crypto.createHash("sha256").update(stableStringify(data)).digest("hex");
+/**
+ * SHA-256 of the stable form, as hex. WebCrypto rather than node:crypto so the
+ * browser-only build identifies a snapshot exactly as the server does.
+ */
+export async function hashCaseData(data: UscisCaseData): Promise<string> {
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(stableStringify(data)));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 export function computeJsonDiff(oldData: unknown, newData: unknown): JsonDiff[] {

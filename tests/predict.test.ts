@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseBulletinRows, parseProcessingTimesCsv, parseUscisChart } from "../server/bulletinData.js";
-import { assembleSummary, bulletinHistory, pageTimeline } from "../server/assemble.js";
+import { parseBulletinRows, parseProcessingTimesCsv, parseUscisChart } from "../shared/bulletinData.js";
+import { assembleSummary, bulletinHistory, pageTimeline } from "../shared/assemble.js";
 import { predictForCase } from "../shared/expectation.js";
 import { addDays, monthFromIndex, monthIndex } from "../shared/dates.js";
 import { bulletinChangeNotice, predictForPerson, type BulletinData, type BulletinRow, type Chart } from "../shared/predict.js";

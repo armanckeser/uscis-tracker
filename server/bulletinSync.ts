@@ -1,11 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type pg from "pg";
-import { parseBulletinRows, parseProcessingTimesCsv, parseUscisChart } from "./bulletinData.js";
+import { DEFAULT_BULLETIN_BASE_URL, parseBulletinRows, parseProcessingTimesCsv, parseUscisChart } from "../shared/bulletinData.js";
 import { categoryCandidates, type BulletinData, type BulletinRow } from "../shared/predict.js";
 import type { ProcessingTimeRow } from "../shared/expectation.js";
 
-export const DEFAULT_BULLETIN_BASE_URL = "https://raw.githubusercontent.com/armanckeser/visa-bulletin-data/main/data";
+export { DEFAULT_BULLETIN_BASE_URL };
 
 /**
  * Where the dataset files live. `VISA_BULLETIN_BASE_URL` may be an http(s) URL

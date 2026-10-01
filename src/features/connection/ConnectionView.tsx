@@ -9,6 +9,8 @@ import { PersonRefreshCard } from "./PersonRefreshCard";
 import { RefreshPanel } from "./RefreshPanel";
 import { NotificationPanel } from "./NotificationPanel";
 import { ImportPanel } from "./ImportPanel";
+import { LocalDataPanel } from "./LocalDataPanel";
+import { LOCAL_MODE } from "../../lib/mode";
 
 // Secondary screen: the refresh tools per person, notifications, and manual
 // import. The daily flow lives on the timeline.
@@ -95,7 +97,11 @@ export function ConnectionView({
         </form>
       </section>
 
-      <NotificationPanel summary={summary} pushState={pushState} pushBusy={pushBusy} onToggle={onTogglePush} />
+      {LOCAL_MODE ? (
+        <LocalDataPanel summary={summary} refresh={refresh} showToast={showToast} />
+      ) : (
+        <NotificationPanel summary={summary} pushState={pushState} pushBusy={pushBusy} onToggle={onTogglePush} />
+      )}
       <ImportPanel summary={summary} refresh={refresh} showToast={showToast} />
     </div>
   );

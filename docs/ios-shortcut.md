@@ -64,6 +64,23 @@ source (the exact timeout message, whether the privacy prompt is once-per-domain
 or every run, and a reported iOS 18.4 slowdown on scripts containing comments —
 the generated script has none). Treat those as verify-on-device.
 
+### In the browser-only tracker
+
+There is no server for the script to post to, so it works differently at the end:
+the script's result is the tracker's address with the cases packed into the URL
+fragment, and a second action opens it.
+
+- After **Run JavaScript on Webpage**, add an **Open URLs** action. It receives the
+  script's result and opens the tracker in Safari, which stores the cases.
+- Every exit path returns an address, including the wrong-site guard, so that
+  action is never handed a sentence it cannot open.
+- Use the tracker in Safari, not from the Home Screen. A Home Screen app has its
+  own storage and would never see what the Shortcut opened in Safari.
+
+This flow is built from the action's documented behaviour (a script's
+`completion` value is passed to the next action) and has not been run on a
+device yet. Treat it as verify-on-device.
+
 ## Option B — bookmarklet
 
 Save the **Refresh cases** bookmark from the Refresh screen as a bookmark, then

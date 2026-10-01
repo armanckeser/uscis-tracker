@@ -1,6 +1,7 @@
 import { ArrowUpRight } from "lucide-react";
 import { USCIS_ACCOUNT_URL } from "../../lib/uscis";
 import { buildImportFallbackBookmarklet, buildRefreshBookmarklet, buildShortcutScript } from "../../lib/bookmarklet";
+import { LOCAL_MODE, appUrl, isStandalone } from "../../lib/mode";
 import type { CaseRecord } from "../../lib/types";
 import type { ShowToast } from "../../hooks/useToast";
 import { BookmarkletRow } from "./BookmarkletRow";
@@ -18,6 +19,10 @@ export function RefreshPanel({
   showToast: ShowToast;
 }) {
   const receipts = cases.map((caseRecord) => caseRecord.receiptNumber);
+  // With no server to post to, the scripts carry the cases back in the URL
+  // fragment, so they need the app's full address rather than just its origin.
+  const delivery = LOCAL_MODE ? "fragment" : "post";
+  const tracker = LOCAL_MODE ? appUrl() : window.location.origin;
 
   return (
     <section className="section-panel">
@@ -32,6 +37,13 @@ export function RefreshPanel({
         </div>
       </div>
 
+      {LOCAL_MODE && isStandalone() && (
+        <p className="callout">
+          You opened this from the Home Screen. On iPhone that copy keeps its own storage, so a refresh run in Safari will
+          not show up here. Use the tracker in Safari instead.
+        </p>
+      )}
+
       <ol className="refresh-steps">
         <li>
           Save <strong>Refresh cases</strong> below as a bookmark. On desktop, drag it to the bookmarks bar. On a phone,
@@ -42,7 +54,10 @@ export function RefreshPanel({
             Sign in to myUSCIS <ArrowUpRight size={14} aria-hidden="true" />
           </a>
         </li>
-        <li>Tap the bookmark. It reads every case that account can see and brings you back here with the result.</li>
+        <li>
+          Tap the bookmark. It reads every case that account can see and brings you back here with the result.
+          {LOCAL_MODE && " The cases travel in the page address, straight into this browser. Nothing is sent to a server."}
+        </li>
       </ol>
 
       <BookmarkletRow
@@ -52,7 +67,7 @@ export function RefreshPanel({
             ? "Add a case first — the bookmark covers whatever is tracked when you copy it."
             : `Covers ${receipts.length} ${receipts.length === 1 ? "case" : "cases"}. Copy it again after adding a case.`
         }
-        code={buildRefreshBookmarklet({ trackerOrigin: window.location.origin, receipts })}
+        code={buildRefreshBookmarklet({ trackerOrigin: tracker, receipts, delivery })}
         showToast={showToast}
       />
 
@@ -69,6 +84,13 @@ export function RefreshPanel({
           <li>
             In Shortcuts, create a shortcut, add the <strong>Run JavaScript on Webpage</strong> action, and replace its
             contents with the script below.
+            {LOCAL_MODE && (
+              <>
+                {" "}
+                Then add an <strong>Open URLs</strong> action after it. The script's result is the tracker's address, and
+                that action opens it.
+              </>
+            )}
           </li>
           <li>
             In that shortcut's details, turn on <strong>Show in Share Sheet</strong> and set it to accept{" "}
@@ -79,10 +101,10 @@ export function RefreshPanel({
             On a signed-in myUSCIS page, tap Share and pick the shortcut. Approve the privacy prompt the first time.
           </li>
         </ol>
-        <ScriptBlock code={buildShortcutScript({ trackerOrigin: window.location.origin, receipts })} showToast={showToast} />
+        <ScriptBlock code={buildShortcutScript({ trackerOrigin: tracker, receipts, delivery })} showToast={showToast} />
         <p className="field-help">
           Steps verified against Apple's documented behaviour for that action, but Shortcuts changes between iOS releases —
-          if it hangs instead of reporting a count, check that the script still ends with the <code>completion(...)</code>
+          if it hangs instead of {LOCAL_MODE ? "opening the tracker" : "reporting a count"}, check that the script still ends with the <code>completion(...)</code>
           call. See <code>docs/ios-shortcut.md</code>.
         </p>
       </details>
@@ -97,7 +119,7 @@ export function RefreshPanel({
         <BookmarkletRow
           label="Import this page"
           hint="Only needed on a raw case data page. It reads what the page is showing and sends it here."
-          code={buildImportFallbackBookmarklet(window.location.origin)}
+          code={buildImportFallbackBookmarklet(tracker, delivery)}
           showToast={showToast}
         />
       </details>

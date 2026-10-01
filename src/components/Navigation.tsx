@@ -1,5 +1,5 @@
 import { Activity, Shield } from "lucide-react";
-import type { RouteId } from "../hooks/useRoute";
+import { routeHref, type RouteId } from "../hooks/useRoute";
 import { ageInDays, relativeFromNow } from "../lib/format";
 import { Brand } from "./Brand";
 
@@ -34,7 +34,7 @@ export function TopBar({
           {NAV_ITEMS.map((item) => (
             <a
               key={item.id}
-              href={item.id === "home" ? "/" : "/connection"}
+              href={routeHref(item.id)}
               aria-current={route === item.id ? "page" : undefined}
               onClick={(event) => {
                 event.preventDefault();
@@ -60,7 +60,7 @@ export function MobileNav({ route, navigate }: NavProps) {
       {NAV_ITEMS.map((item) => (
         <a
           key={item.id}
-          href={item.id === "home" ? "/" : "/connection"}
+          href={routeHref(item.id)}
           aria-current={route === item.id ? "page" : undefined}
           onClick={(event) => {
             event.preventDefault();

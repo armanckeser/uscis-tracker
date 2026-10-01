@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeTimeline, type ChangeRecord, type FactRecord } from "../shared/timeline.js";
-import { buildChanges } from "../server/domain.js";
+import { buildChanges } from "../shared/domain.js";
 
 let n = 0;
 function change(over: Partial<ChangeRecord>): ChangeRecord {
