@@ -11,6 +11,7 @@ import { FreshnessSheet } from "./components/FreshnessSheet";
 import { Toast } from "./components/Toast";
 import { LoadingState } from "./components/LoadingState";
 import { RawSnapshotModal } from "./components/RawSnapshotModal";
+import { SiteNote } from "./components/SiteNote";
 import { TimelineView } from "./features/timeline/TimelineView";
 import { ConnectionView } from "./features/connection/ConnectionView";
 
@@ -58,6 +59,7 @@ function App() {
         ) : (
           <LoadingState />
         )}
+        <SiteNote />
       </main>
 
       <MobileNav route={route} navigate={navigate} />

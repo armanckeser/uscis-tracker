@@ -910,6 +910,21 @@ details[open] > :not(summary) {
   animation: reveal 220ms var(--ease-out);
 }
 
+.site-note {
+  margin-block-start: var(--space-7);
+  text-align: center;
+  color: var(--color-soft);
+}
+
+.site-note p {
+  margin: 0;
+}
+
+.site-note a {
+  color: var(--color-muted);
+  text-underline-offset: 0.2em;
+}
+
 .mobile-nav {
   position: fixed;
   inset-inline: 0;

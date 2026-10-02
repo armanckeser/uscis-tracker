@@ -133,6 +133,11 @@ npm run build:static # what GitHub Pages serves; pass --base=/<repo>/ for a proj
 
 [DOMAIN.md](DOMAIN.md) maps what the USCIS API actually returns and what each field means.
 
+## Not affiliated with USCIS
+
+This is an independent project. It is not affiliated with, endorsed by, or connected to
+USCIS or the Department of Homeland Security, and its estimates are not legal advice.
+
 ## License
 
 Released under the GNU Affero General Public License v3.0, see [LICENSE](LICENSE). If you run a modified version where other people can reach it, the AGPL asks you to publish your changes too.
