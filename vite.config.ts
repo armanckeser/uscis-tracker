@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { defineConfig, loadEnv, type Plugin } from "vite";
+import { defineConfig, loadEnv, type HtmlTagDescriptor, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 
 const DEFAULT_BULLETIN_BASE_URL = "https://raw.githubusercontent.com/armanckeser/visa-bulletin-data/main/data";
@@ -16,8 +16,50 @@ const DEFAULT_BULLETIN_BASE_URL = "https://raw.githubusercontent.com/armanckeser
  * makes the browser enforce it. Scripts can only reach this site and the public
  * bulletin dataset. Build only, because the dev server needs inline scripts and
  * a websocket.
+ *
+ * And it is the build strangers land on, so it gets the pitch: a title and
+ * description that say what this is, a canonical URL, and the Open Graph and
+ * Twitter tags a link preview is drawn from. Those need absolute URLs and only
+ * the deployment knows its own address, so the Pages workflow passes it as
+ * SITE_URL; without it the page keeps its plain title and gets no preview tags.
  */
-function staticSite(bulletinOrigin: string): Plugin {
+const SHARE_TITLE = "USCIS Tracker: free, private case and priority date tracker";
+const SHARE_DESCRIPTION =
+  "See what changed on your USCIS cases, including the silent updates, and estimate when the visa bulletin reaches your priority date. Free, and nothing leaves your browser.";
+
+function sharePreview(html: string, siteUrl: string): { html: string; tags: HtmlTagDescriptor[] } {
+  const site = siteUrl.endsWith("/") ? siteUrl : `${siteUrl}/`;
+  const image = `${site}og.jpg`;
+  const meta = (key: "property" | "name", id: string, content: string): HtmlTagDescriptor => ({
+    tag: "meta",
+    attrs: { [key]: id, content },
+    injectTo: "head",
+  });
+  const pitched = html.replace(/<title>[^<]*<\/title>/, `<title>${SHARE_TITLE}</title>`);
+  if (!pitched.includes(SHARE_TITLE)) throw new Error("index.html needs a <title> for the share preview to replace");
+  return {
+    html: pitched,
+    tags: [
+      meta("name", "description", SHARE_DESCRIPTION),
+      { tag: "link", attrs: { rel: "canonical", href: site }, injectTo: "head" },
+      meta("property", "og:type", "website"),
+      meta("property", "og:site_name", "USCIS Tracker"),
+      meta("property", "og:title", SHARE_TITLE),
+      meta("property", "og:description", SHARE_DESCRIPTION),
+      meta("property", "og:url", site),
+      meta("property", "og:image", image),
+      meta("property", "og:image:width", "1200"),
+      meta("property", "og:image:height", "600"),
+      meta("property", "og:image:alt", "USCIS Tracker: a phone showing your place in line, about 4 to 6 months to go, with the visa bulletin cutoff charted against your priority date."),
+      meta("name", "twitter:card", "summary_large_image"),
+      meta("name", "twitter:title", SHARE_TITLE),
+      meta("name", "twitter:description", SHARE_DESCRIPTION),
+      meta("name", "twitter:image", image),
+    ],
+  };
+}
+
+function staticSite(bulletinOrigin: string, siteUrl: string | undefined): Plugin {
   let outDir = "dist";
   let building = false;
   return {
@@ -39,7 +81,8 @@ function staticSite(bulletinOrigin: string): Plugin {
         "base-uri 'self'",
         "form-action 'none'",
       ].join("; ");
-      return withoutInstall.replace(/(<meta charset="UTF-8" \/>\r?\n)/, `$1    <meta http-equiv="Content-Security-Policy" content="${policy}" />\n`);
+      const secured = withoutInstall.replace(/(<meta charset="UTF-8" \/>\r?\n)/, `$1    <meta http-equiv="Content-Security-Policy" content="${policy}" />\n`);
+      return siteUrl ? sharePreview(secured, siteUrl) : secured;
     },
     // GitHub Pages serves 404.html for any path it has no file for, which is how
     // /connection loads the app when opened directly.
@@ -57,7 +100,7 @@ export default defineConfig(({ mode }) => {
   const bulletinOrigin = new URL(env.VITE_BULLETIN_BASE_URL || DEFAULT_BULLETIN_BASE_URL).origin;
 
   return {
-    plugins: [react(), ...(local ? [staticSite(bulletinOrigin)] : [])],
+    plugins: [react(), ...(local ? [staticSite(bulletinOrigin, process.env.SITE_URL)] : [])],
     server: {
       port: 5173,
       proxy: local ? undefined : { "/api": "http://localhost:4000" },

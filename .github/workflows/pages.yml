@@ -37,6 +37,14 @@ jobs:
         uses: actions/configure-pages@v5
       # base_path is "/uscis-tracker" for a project site and empty on a custom domain.
       - run: npx tsc -b && npx vite build --mode static --base="${{ steps.pages.outputs.base_path }}/"
+        env:
+          # The link preview needs the site's full address (see sharePreview in vite.config.ts).
+          SITE_URL: ${{ steps.pages.outputs.base_url }}/
+      # A preview image that 404s shows up as a blank card, not a failed build.
+      - name: Check the share preview points at a file that shipped
+        run: |
+          grep -q 'property="og:image" content="${{ steps.pages.outputs.base_url }}/og.jpg"' dist/index.html
+          test -f dist/og.jpg
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
