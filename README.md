@@ -33,6 +33,8 @@ USCIS never announces), and estimates when the visa bulletin will reach your pri
   <img src="img/refresh.png" alt="Refreshing: save the Refresh cases bookmark, sign in to myUSCIS, tap the bookmark." width="330" />
 </p>
 
+If USCIS Tracker is useful to you, starring the repo helps other people find it, and [armanckeser.com/subscribe](https://armanckeser.com/subscribe) has ways to hear about new releases.
+
 ## How to use it
 
 1. **Add a person.** Each person is one myUSCIS account.
