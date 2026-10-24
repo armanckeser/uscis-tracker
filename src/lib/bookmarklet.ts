@@ -29,6 +29,7 @@
 // case was tracked brings the cases back on its first run.
 
 import { ENCODER_JS, HANDOFF_PARAM } from "./handoff.js";
+import { importPath } from "./importKey.js";
 
 const USCIS_HOST_SUFFIX = "my.uscis.gov";
 const CASE_API_PATH = "/account/case-service/api/cases/";
@@ -106,7 +107,7 @@ function discoverJs(): string {
  * never seen unless it is told whose it is, and only the tracker can ask.
  */
 function readAllCasesJs(delivery: Delivery, discover = true): string {
-  const post = `await fetch(T+${jsString(IMPORT_PATH)},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});`;
+  const post = `await fetch(T+${jsString(importPath(IMPORT_PATH))},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});`;
   const deliver = delivery === "fragment" ? `D.push(raw);sent++;` : `if(i<R.length){${post}sent++;}else{D.push(raw);}`;
   return (
     (discover ? discoverJs() : `const K=R,W=K.length;`) +
@@ -186,7 +187,7 @@ export function buildImportFallbackBookmarklet(trackerOrigin: string, delivery: 
   const deliver =
     delivery === "fragment"
       ? `location.href=${fragmentUrlJs(`{v:1,cases:[raw],denied:0,failed:0,codes:""}`)};`
-      : `await fetch(T+${jsString(IMPORT_PATH)},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});` +
+      : `await fetch(T+${jsString(importPath(IMPORT_PATH))},{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify({raw})});` +
         `location.href=T+"/?sent=1";`;
 
   return (

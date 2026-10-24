@@ -19,6 +19,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   const data = await response.json().catch(() => null);
+  // The session ended (the tracker has a password; server/auth.ts): back to the sign-in screen.
+  if (response.status === 401) window.dispatchEvent(new Event("auth:signed-out"));
   if (!response.ok) {
     throw new Error(data?.error ?? `Request failed with HTTP ${response.status}.`);
   }

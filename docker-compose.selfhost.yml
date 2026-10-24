@@ -1,0 +1,49 @@
+# USCIS Tracker for anyone self-hosting it. One command, no clone:
+#
+#   docker compose -f oci://ghcr.io/armanckeser/uscis-tracker-stack:latest up -d
+#
+# (Compose 2.34+; or download this file and run `docker compose -f docker-compose.selfhost.yml up -d`.)
+# Then open http://<host>:8080. The schema, secrets and Web Push keys are set up on first start. Your phone
+# must reach this server to send refreshes from my.uscis.gov (a home server plus Tailscale works well).
+#
+# Only the app publishes a port. The store packages (armanckeser/selfhost-apps) are generated from this
+# shape, so keep it free of bind mounts, env_file and build:.
+
+name: uscis-tracker
+
+services:
+  app:
+    image: ghcr.io/armanckeser/uscis-tracker:${TAG:-latest}
+    restart: unless-stopped
+    # Long syntax: Compose 5 `publish` rejects a short "${PORT}:8080" string.
+    ports:
+      - target: 8080
+        published: "${PORT:-8080}"
+    environment:
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres}@postgres:5432/app
+      # Set a password unless the tracker is only reachable from your own devices (Tailscale, a VPN).
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
+      # Only when a page on another origin calls the API; the app itself is served from this one.
+      APP_ORIGIN: ${APP_ORIGIN:-}
+      TZ: ${TZ:-UTC}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

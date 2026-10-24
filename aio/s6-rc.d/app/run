@@ -1,0 +1,6 @@
+#!/command/with-contenv sh
+PASSWORD="$(cat /data/secrets/postgres-password)"
+export DATABASE_URL="postgresql://postgres:${PASSWORD}@127.0.0.1:5432/app"
+export HOME=/data/home
+cd /app
+exec s6-setuidgid app node --import tsx server/index.ts

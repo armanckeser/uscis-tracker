@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import dotenv from "dotenv";
@@ -24,6 +25,7 @@ import { bulletinChangeNotice, predictForPerson } from "../shared/predict.js";
 import { resolveProfile, type PersonProfileInput } from "../shared/profile.js";
 import { normalizeTimeline, type ChangeRecord, type FactRecord } from "../shared/timeline.js";
 import type { PatchPersonBody, RawChange } from "../shared/api.js";
+import { loadInstanceSecrets, registerAuthRoutes, requireAuth, waitForDatabase } from "./auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(process.cwd(), "server/.env") });
@@ -32,15 +34,28 @@ dotenv.config();
 const PORT = Number(process.env.PORT ?? 4000);
 const DATABASE_URL = process.env.DATABASE_URL ?? "postgresql://postgres:password@localhost:5435/app";
 const APPLY_SCHEMA = process.env.APPLY_SCHEMA !== "false";
+// The container serves the built web app from this same port, so a self-hosted install is the tracker and
+// Postgres, and nothing else. `npm run dev` leaves it off: Vite serves the web app.
+const SERVE_WEB = process.env.SERVE_WEB === "1";
+const WEB_ROOT = process.env.WEB_ROOT ?? "./dist";
+
+const pool = new pg.Pool({ connectionString: DATABASE_URL });
+
+// First start of a store install: wait for Postgres, apply the schema, then load (or create) the instance
+// secrets into process.env before anything below reads them.
+await waitForDatabase(pool);
+await applySchema();
+await loadInstanceSecrets(pool);
+
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
 const BULLETIN_SYNC = process.env.BULLETIN_SYNC !== "false";
 const BULLETIN_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000;
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT ?? "mailto:uscis-tracker@localhost";
 /** Where the app is served from, e.g. https://uscis.example.com. The API only accepts calls from it. */
-const APP_ORIGIN = process.env.APP_ORIGIN ?? "https://uscis.example.com";
+// Only for CORS: the app is served from the same origin, so this matters only when another origin calls it.
+const APP_ORIGIN = process.env.APP_ORIGIN ?? "";
 
-const pool = new pg.Pool({ connectionString: DATABASE_URL });
 const pushEnabled = Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
 
 if (pushEnabled) {
@@ -380,7 +395,7 @@ async function sendPushToAll(title: string, body: string, tag: string, url = "/"
 // Origins allowed to call the API: the app itself, the phone-refresh bookmarklets
 // (which POST snapshots from a logged-in my.uscis.gov tab), and local dev hosts.
 const ALLOWED_ORIGINS = [
-  APP_ORIGIN,
+  ...(APP_ORIGIN ? [APP_ORIGIN] : []),
   "https://my.uscis.gov",
   "http://localhost:5181",
   "http://localhost:5173",
@@ -390,6 +405,9 @@ const ALLOWED_ORIGINS = [
 
 const app = new Hono();
 app.use("/api/*", cors({ origin: ALLOWED_ORIGINS }));
+// Off unless AUTH_PASSWORD is set (server/auth.ts).
+app.use("/api/*", requireAuth);
+registerAuthRoutes(app);
 
 app.get("/api/health", async (c) => {
   const people = await getPeople();
@@ -743,8 +761,6 @@ app.onError((error, c) => {
   return c.json({ error: message }, error instanceof z.ZodError ? 400 : 500);
 });
 
-await applySchema();
-
 /**
  * Pulls the public visa-bulletin dataset and, when a new bulletin month landed,
  * pushes once per tracked person whose category and country moved. Never throws:
@@ -784,5 +800,21 @@ if (BULLETIN_SYNC) {
   setInterval(() => void syncBulletins(), BULLETIN_SYNC_INTERVAL_MS).unref();
 }
 
-serve({ fetch: app.fetch, port: PORT });
+if (SERVE_WEB) {
+  app.all("/api/*", (c) => c.json({ error: "Not found." }, 404));
+  // Hashed build assets never change; index.html and sw.js must revalidate or an update never reaches an
+  // installed app.
+  app.use("/assets/*", async (c, next) => {
+    await next();
+    c.header("Cache-Control", "public, max-age=31536000, immutable");
+  });
+  app.use("*", async (c, next) => {
+    await next();
+    if (!c.res.headers.has("Cache-Control")) c.header("Cache-Control", "no-cache");
+  });
+  app.use("*", serveStatic({ root: WEB_ROOT }));
+  app.get("*", serveStatic({ root: WEB_ROOT, path: "index.html" }));
+}
+
+serve({ fetch: app.fetch, port: PORT, hostname: process.env.HOST ?? "0.0.0.0" });
 console.log(`USCIS Tracker API listening on http://localhost:${PORT}`);

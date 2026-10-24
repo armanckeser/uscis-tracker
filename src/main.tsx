@@ -4,10 +4,11 @@ import App from "./App";
 import "./styles.css";
 import { registerServiceWorker } from "./lib/push";
 import { LOCAL_MODE } from "./lib/mode";
+import { AuthGate } from "./components/AuthGate";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    {LOCAL_MODE ? <App /> : <AuthGate><App /></AuthGate>}
   </StrictMode>,
 );
 

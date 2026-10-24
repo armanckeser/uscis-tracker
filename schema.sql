@@ -336,3 +336,11 @@ GRANT CONNECT ON DATABASE app TO agent_reader;
 GRANT USAGE ON SCHEMA public TO agent_reader;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO agent_reader;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO agent_reader;
+
+-- What a self-hosted install generates for itself on first start (server/auth.ts): the session key, the
+-- agent API token, the bookmarklet import key and the Web Push keys. Never returned whole by an endpoint.
+CREATE TABLE IF NOT EXISTS instance_secrets (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

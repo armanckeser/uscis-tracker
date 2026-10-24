@@ -1,0 +1,46 @@
+# Store listing for USCIS Tracker. armanckeser/selfhost-apps reads this file from the latest release and
+# generates every store package from it (Cosmos, Umbrel, CasaOS/ZimaOS, Runtipi, Unraid, Portainer).
+# Paths are relative to the repo root.
+
+id: uscis-tracker
+name: USCIS Tracker
+auth: builtin
+tagline: Know what moved on your green card case, and when your date comes up.
+description: |
+  One tap from a signed-in my.uscis.gov tab reads every case in your household. The tracker keeps the full history, shows what changed since you last looked (including the updates USCIS never announces), and estimates when the visa bulletin will reach your priority date.
+
+  It sends a push notification when a case changes. The refresh runs from your own phone's USCIS session, so the server never holds your USCIS password; your phone has to reach the server (a home server plus Tailscale works well) over HTTPS.
+category: utilities
+developer: Alex Keser
+website: https://github.com/armanckeser/uscis-tracker
+repo: https://github.com/armanckeser/uscis-tracker
+support: https://github.com/armanckeser/uscis-tracker/issues
+license: AGPL-3.0-or-later
+icon: public/icon-512.png
+screenshots:
+  - img/refresh.png
+  - img/place-in-line.png
+image: ghcr.io/armanckeser/uscis-tracker
+compose: docker-compose.selfhost.yml
+host_port: 5181
+services:
+  app:
+    image: ghcr.io/armanckeser/uscis-tracker:${version}
+    port: 8080
+    environment:
+      DATABASE_URL: postgresql://postgres:${secret:db}@${host:postgres}:5432/app
+    depends_on: [postgres]
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${secret:db}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      pgdata: /var/lib/postgresql/data
+env: []

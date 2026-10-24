@@ -17,3 +17,6 @@ server/.env
 
 # OS cruft
 .DS_Store
+
+# curl cookie jars from local testing
+*.cookies
