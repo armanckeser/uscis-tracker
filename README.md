@@ -23,8 +23,19 @@ If it helps you, a star helps other people find it, and [armanckeser.com/subscri
 docker compose -f oci://ghcr.io/armanckeser/uscis-tracker-stack:latest up -d
 ```
 
-Open port `8080`; put it behind HTTPS. Also in the app stores of Cosmos, Umbrel, CasaOS, Runtipi, Unraid
-and Portainer. Details and variables are in [CONTRIBUTING.md](CONTRIBUTING.md#self-hosting).
+Open port `8080`; put it behind HTTPS. Details and variables are in [CONTRIBUTING.md](CONTRIBUTING.md#self-hosting).
+
+**From your server's app store:** add the catalog once, then install USCIS Tracker like any other app.
+
+| Server | Where | Paste |
+| --- | --- | --- |
+| Cosmos | Market → Sources → Add Source | `https://armanckeser.github.io/selfhost-apps/servapps.json` |
+| Umbrel | App Store → ⋯ → Community App Stores | `https://github.com/armanckeser/selfhost-apps` |
+| CasaOS / ZimaOS | App Store → Add Source | `https://github.com/armanckeser/selfhost-apps/archive/refs/heads/casaos.zip` |
+| Runtipi | Settings → App Stores → Add App Store | `https://github.com/armanckeser/selfhost-apps` |
+| Portainer | Settings → App Templates → URL | `https://armanckeser.github.io/selfhost-apps/portainer/templates.json` |
+
+Unraid's Community Apps doesn't list it yet; [selfhost-apps](https://github.com/armanckeser/selfhost-apps#add-the-catalog-to-your-server) has the template to add by hand.
 
 </details>
 
