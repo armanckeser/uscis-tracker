@@ -11,7 +11,7 @@ description: |
 
   It sends a push notification when a case changes. The refresh runs from your own phone's USCIS session, so the server never holds your USCIS password; your phone has to reach the server (a home server plus Tailscale works well) over HTTPS.
 category: utilities
-developer: Alex Keser
+developer: armanckeser
 website: https://github.com/armanckeser/uscis-tracker
 repo: https://github.com/armanckeser/uscis-tracker
 support: https://github.com/armanckeser/uscis-tracker/issues

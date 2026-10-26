@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Bookmark, LogIn, Pointer } from "lucide-react";
 import { USCIS_ACCOUNT_URL } from "../../lib/uscis";
 import { buildImportFallbackBookmarklet, buildRefreshBookmarklet, buildShortcutScript } from "../../lib/bookmarklet";
 import { LOCAL_MODE, isStandalone } from "../../lib/mode";
@@ -28,11 +28,7 @@ export function RefreshPanel({
       <div className="section-heading">
         <div>
           <h2>Refreshing</h2>
-          <p>
-            USCIS asks for a one-time code every time you sign in, so nothing can check your cases on a schedule. A refresh
-            has to run inside a browser that is already signed in. Save this bookmark once and it becomes one tap for every
-            case.
-          </p>
+          <p>USCIS asks for a new code at every sign-in, so a refresh runs in your own signed-in browser.</p>
         </div>
       </div>
 
@@ -43,20 +39,29 @@ export function RefreshPanel({
         </p>
       )}
 
-      <ol className="refresh-steps">
+      <ol className="refresh-flow">
         <li>
-          Save <strong>Refresh cases</strong> below as a bookmark. On desktop, drag it to the bookmarks bar. On a phone,
-          copy it and paste it as the address of a new bookmark.
+          <span className="refresh-flow-icon" aria-hidden="true">
+            <Bookmark size={20} />
+          </span>
+          <strong>Save the bookmark</strong>
+          <span className="muted">Desktop: drag it up. Phone: copy it into a new bookmark.</span>
         </li>
         <li>
+          <span className="refresh-flow-icon" aria-hidden="true">
+            <LogIn size={20} />
+          </span>
           <a className="inline-link" href={USCIS_ACCOUNT_URL} target="_blank" rel="noreferrer">
             Sign in to myUSCIS <ArrowUpRight size={14} aria-hidden="true" />
           </a>
+          <span className="muted">Open the page that lists your cases.</span>
         </li>
         <li>
-          On the page that lists your cases, tap the bookmark. It reads every case that account can see, including ones
-          not tracked yet, and brings you back here with the result.
-          {LOCAL_MODE && " The cases travel in the page address, straight into this browser. Nothing is sent to a server."}
+          <span className="refresh-flow-icon" aria-hidden="true">
+            <Pointer size={20} />
+          </span>
+          <strong>Tap the bookmark</strong>
+          <span className="muted">{LOCAL_MODE ? "Every case comes back here, straight into this browser." : "Every case comes back here."}</span>
         </li>
       </ol>
 

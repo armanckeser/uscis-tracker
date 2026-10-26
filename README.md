@@ -8,6 +8,17 @@
   <img src="img/hero.gif" alt="Four changes since you last looked: Alex's work permit card was mailed and picked up by USPS, and the I-485 got a silent update. Below, Alex's place in line: about 4–6 months to go, most likely April 2027." width="360" />
 </p>
 
+<table>
+  <tr>
+    <td width="50%"><img src="img/place-in-line.png" alt="Your place in line: about 4-6 months to go, most likely April 2027, with a chart of the visa bulletin cutoff approaching the priority date" /></td>
+    <td width="50%"><img src="img/refresh.png" alt="Refreshing: save one bookmark, sign in to myUSCIS, tap the bookmark, and every case in the household updates" /></td>
+  </tr>
+  <tr>
+    <td><sub><b>Your place in line.</b> The visa bulletin cutoff against your priority date, in plain months.</sub></td>
+    <td><sub><b>One-tap refresh.</b> A bookmark reads every case from your signed-in myUSCIS tab.</sub></td>
+  </tr>
+</table>
+
 - One tap from a signed-in myUSCIS tab refreshes every case in your household.
 - Shows what changed since your last visit, including silent updates USCIS never announces.
 - Estimates when the visa bulletin will reach your priority date.

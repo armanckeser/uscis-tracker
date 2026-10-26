@@ -5,6 +5,7 @@ import { getBulletinHistory } from "../../lib/api";
 import type { BulletinHistory, PersonRecord } from "../../lib/types";
 import { chartName, countryName } from "../../lib/uscisCopy";
 import { CONFIDENCE_LABEL, deltaFor, explanationBody, headlineFor } from "./predictionCopy";
+import { PaceRange } from "./PaceRange";
 import { PriorityChart } from "./PriorityChart";
 
 /** The card that answers "where am I in line?" for one person. */
@@ -161,7 +162,7 @@ function PlaceCard({ person, principalName, onEditProfile }: { person: PersonRec
         </div>
       </dl>
 
-      <p className="place-explain">{explanationBody(prediction.explanation)}</p>
+      {prediction.eta ? <PaceRange prediction={prediction} /> : <p className="place-explain">{explanationBody(prediction.explanation)}</p>}
 
       <footer className="place-foot">
         {prediction.confidence && <span className={`chip chip-${prediction.confidence}`}>{CONFIDENCE_LABEL[prediction.confidence]}</span>}

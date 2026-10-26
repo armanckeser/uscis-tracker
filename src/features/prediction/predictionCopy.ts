@@ -42,7 +42,7 @@ export type DeltaView = { text: string; direction: "up" | "down" | "flat"; tone:
 
 const MINUS = "−";
 
-function magnitude(days: number): string {
+export function magnitude(days: number): string {
   const abs = Math.abs(days);
   if (abs >= 60) {
     const months = Math.round(abs / 30.4375);
