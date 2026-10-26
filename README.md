@@ -10,8 +10,8 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="img/place-in-line.png" alt="Your place in line: about 4-6 months to go, most likely April 2027, with a chart of the visa bulletin cutoff approaching the priority date" /></td>
-    <td width="50%"><img src="img/refresh.png" alt="Refreshing: save one bookmark, sign in to myUSCIS, tap the bookmark, and every case in the household updates" /></td>
+    <td width="50%"><img src="img/place-in-line.png" alt="Your place in line: about 4 to 5 months to go, most likely March 2027, a chart of the visa bulletin cutoff approaching the priority date, how far behind the cutoff it is, how fast the cutoff moves, and a faster, likely and slower arrival track" /></td>
+    <td width="50%"><img src="img/refresh.png" alt="Refreshing in three steps: save the bookmark, sign in to myUSCIS, tap the bookmark" /></td>
   </tr>
   <tr>
     <td><sub><b>Your place in line.</b> The visa bulletin cutoff against your priority date, in plain months.</sub></td>
